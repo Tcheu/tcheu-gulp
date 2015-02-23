@@ -1,4 +1,4 @@
-# gulp-tcheu
+# tcheu-gulp
 
 ## About the script
 
