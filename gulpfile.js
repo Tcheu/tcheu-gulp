@@ -1,192 +1,174 @@
 'use strict';
 
-/*************
- * Variables *
- *************/
+/**
+ * Configuration
+ */
 
-//Load gulp and its associated plugins through the plugin autoloader
-var gulp = require('gulp'),
-	http = require('http'),
-	plugins = require('gulp-load-plugins')({
-		//Add a prefix for each dependency that is not specific to gulp
-		pattern: ['gulp-*', 'gulp.*', 'browser-sync', 'ecstatic']
-	}),
-	//To clean files
-	del = require('del'),
-	//Load package.json
-	fs = require('fs'),
-	pkg = JSON.parse(fs.readFileSync('./package.json', 'utf8')),
-	//We load the configuration file
-	config = require('./gulp-config');
-
-
-/********************
- * Helper functions *
- ********************/
-
-//Notify on console
-var notifyConsole = function(msg, type)
-{
-	msg = (msg instanceof Array) ? msg.join('\n') : msg;
-
-	plugins.util.log(msg);
-};
-
-//Notify via browser-sync
-var notifyBrowserSync = function(msg, type)
-{
-	var msgTimeout = config.global.notifications.timeout;
-
-	//Notification timeout
-	if( type === 'error' ) {
-		msgTimeout = config.global.notifications.errorTimeout;
-	}
-
-	msg = (msg instanceof Array) ? msg.join('<br />') : msg;
-	msg = '<div style="text-align:left;">' + msg + '</div>';
-
-	//Easter egg: we will optionally display a logo here
-	if( 'logo' in config.global.notifications && config.global.notifications.logo.length > 0 ) {
-		msg = msg + '<div style="text-align:right;"><img src="' + config.global.notifications.logo + '" width="32" /></div>';
-	}
-
-	plugins.browserSync.notify(msg, msgTimeout);
-};
-
-//Notifications
-var notify = function(msg, type)
-{
-	type = (type === 'undefined') ? 'info' : 'error';
-	notifyConsole(msg, type);
-	notifyBrowserSync(msg, type);
-};
-
-//Error handler
-var handleError = function(error)
-{
-	var msg = [];
-
-	msg.push('Error: ' + error.message);
-
-	if( 'plugin' in error) {
-		msg.push('Plugin: ' + error.plugin);
-	}
-
-	if( 'fileName' in error && 'lineNumber' in error ) {
-		msg.push('File name: ' + error.fileName);
-		msg.push('Line number: ' + error.lineNumber);
-	}
-
-	notify(msg);
+var config = {
+    // Define here the required browser versions for the autoprefixer
+    'autoprefixer': [
+        'last 2 versions',
+        'ie >= 9'
+    ],
+    // BrowserSync configuration
+    'browsersync': {
+        'open': false,
+        'port': '3000',
+        'server': {
+            'baseDir': 'public'
+        },
+        'notify': true
+    },
+    // SCSS files
+    'scss': {
+        'src': 'public/assets/css/',
+        'dist': 'public/dist/css',
+        'bundleName': 'main.css'
+    },
+    // These are the HTML or PHP files to watch
+    'html': {
+        'src': [
+            'craft/templates/**/*.html'
+        ]
+    },
+    // Images folders for image optimisation
+    'img': {
+        'src': 'public/assets/img/**/*.+(png|jpg|jpeg|gif|svg|ico)',
+        'dist': 'public/dist/img/'
+    },
+    // JavaScript files
+    'js': {
+        'src': 'public/assets/js/',
+        'dist': 'public//dist/js/',
+        'bundleName': 'main.js'
+    },
+    // Source SVG files to create a spritemap
+    'svg': {
+        'src': 'public/assets/img/svg/sprite_sources/',
+        'dist': 'public/img/svg/',
+        'spriteFile': 'svgsprite.svg'
+    }
 };
 
 
-/*********
- * Tasks *
- *********/
+/**
+ * Load Gulp.js and its associated plugins
+ */
 
-//Start browser-sync
-gulp.task('startBrowserSync', function() {
-	plugins.browserSync( config.browserSync );
+var gulp				= require('gulp'),
+    sass				= require('gulp-sass'),
+    autoprefixer		= require('gulp-autoprefixer'),
+    jshint				= require('gulp-jshint'),
+    stripdebug			= require('gulp-strip-debug'),
+    uglify				= require('gulp-uglify'),
+    rename				= require('gulp-rename'),
+    replace				= require('gulp-replace'),
+    concat				= require('gulp-concat'),
+    notify				= require('gulp-notify'),
+    minifycss			= require('gulp-minify-css'),
+    path				= require('path'),
+    plumber				= require('gulp-plumber'),
+    gutil				= require('gulp-util'),
+    imagemin			= require('gulp-imagemin'),
+    svgstore			= require('gulp-svgstore'),
+    cp					= require('child_process'),
+    browsersync			= require('browser-sync'),
+    size 				= require('gulp-size'),
+    exec				= require('child_process').exec;
+
+
+/**
+ * Helper functions
+ */
+
+// Error function for Plumber
+var onError = function (err) {
+    gutil.beep();
+    console.log(err);
+    this.emit('end');
+};
+
+
+/**
+ * Tasks
+ */
+
+// BrowserSync proxy
+gulp.task('browser-sync', function() {
+    browsersync(config.browsersync);
 });
 
-//Reload browser-sync
-gulp.task('reloadBrowserSync', function() {
-	plugins.browserSync.reload();
+// BrowserSync reload all Browsers
+gulp.task('browsersync-reload', function () {
+    browsersync.reload();
 });
 
-//Start a static web server
-gulp.task('startStaticServer', function() {
-	http.createServer(
-		plugins.ecstatic({root: config.staticServer.baseDir})
-	).listen(config.staticServer.port);
+// Sass compilation
+gulp.task('scss', function() {
+    return gulp.src( [config.scss.src + 'main.scss'] )
+        .pipe(plumber({ errorHandler: onError }))
+        .pipe(sass({ style: 'expanded' }))
+        .pipe(gulp.dest( config.scss.dist ))
+        .pipe(autoprefixer( config.autoprefixer ))
+        .pipe(rename({ suffix: '.min' }))
+        .pipe(minifycss())
+        .pipe(gulp.dest( config.scss.dist ))
+        .pipe(browsersync.reload({stream: true}))
+        .pipe(notify({ message: 'Styles task done' }))
+        .pipe(size({ title: 'scss' }));
 });
 
-//Compile styles
-gulp.task('compileStyles', function() {
-	var stream = gulp.src( config.css.src )
-		.pipe(plugins.plumber({ errorHandler: function(error) {
-				handleError(error);
-				this.emit('end');
-			}
-		}))
-		.pipe(plugins.sass())
-		.pipe(plugins.autoprefixer( config.autoprefixer ))
-		.pipe(gulp.dest( config.css.dest ))
-		.pipe(plugins.browserSync.reload( {stream:true} ));
-
-	return stream;
+// Lint JS task
+gulp.task('jslint', function() {
+    return gulp.src( config.js.src + '**/*.js' )
+        .pipe(plumber({ errorHandler: onError }))
+        .pipe(jshint())
+        .pipe(jshint.reporter('default'))
+        .pipe(jshint.reporter('fail'))
+        .pipe(notify({ message: 'JS lint task done' }));
 });
 
-//Compress styles
-gulp.task('compressStyles', function() {
-	var stream = gulp.src( config.css.dest + '/' + config.css.bundleFileName )
-		.pipe(plugins.rename({suffix:'.' + pkg.version + '.min'}))
-		.pipe(plugins.minifyCss())
-		.pipe(gulp.dest( config.css.dest ));
+// Concatenate and Minify JS task
+gulp.task('scripts', function() {
+    return gulp.src( config.js.src + '**/*.js' )
+        .pipe(concat( config.js.bundleName ))
+        .pipe(gulp.dest( config.js.dist ))
+        .pipe(rename({ suffix: '.min' }))
+        .pipe(stripdebug())
+        .pipe(uglify())
+        .pipe(gulp.dest( config.js.dist ))
+        .pipe(browsersync.reload({ stream:true }))
+        .pipe(notify({ message: 'Scripts task done' }))
+        .pipe(size({ title: 'scripts' }));
 });
 
-//Check scripts
-gulp.task('checkScripts', function() {
-	var stream = gulp.src( config.js.src )
-		.pipe(plugins.plumber({ errorHandler: handleError }))
-		.pipe(plugins.eslint( config.eslint ))
-		.pipe(plugins.eslint.format())
-		.pipe(plugins.eslint.failAfterError());
-
-	return stream;
+// Optimize Images task
+gulp.task('optimize-img', function() {
+    return gulp.src([ config.img.src, '!' + config.svg.dist + config.svg.spriteFile ])
+        .pipe(imagemin({
+            progressive: true,
+            svgoPlugins: [ {removeViewBox:false}, {removeUselessStrokeAndFill:false} ]
+        }))
+        .pipe(gulp.dest( config.img.dist ))
+        .pipe(notify({ message: 'Images task done', onLast: true }));
 });
 
-//Compile scripts
-gulp.task('compileScripts', ['checkScripts'],function() {
-	var stream = gulp.src( config.js.src )
-		.pipe(plugins.concat( config.js.bundleFileName ))
-		.pipe(gulp.dest( config.js.dest ));
-
-	return stream;
+// Make svg sprite
+gulp.task('svgsprite', ['optimize-img'], function() {
+    return gulp.src( config.svg.src + '/**/' + '*.svg' )
+        .pipe(svgstore())
+        .pipe(rename( config.svg.spriteFile ))
+        .pipe(gulp.dest( config.svg.dist ))
+        .pipe(notify({ message: 'SVG sprite done' }));
 });
 
-//Compress scripts
-gulp.task('compressScripts', function() {
-	var stream = gulp.src( config.js.dest + '/' + config.js.bundleFileName )
-		.pipe(plugins.stripDebug())
-		.pipe(plugins.rename({suffix:'.' + pkg.version + '.min'}))
-		.pipe(plugins.uglify())
-		.pipe(gulp.dest( config.js.dest ));
+// Watch task
+gulp.task('watch', ['browser-sync'], function () {
+    gulp.watch(config.scss.src + '**/*' , ['scss']);
+    gulp.watch(config.js.src + '**/*' , ['jslint', 'scripts']);
+    gulp.watch(config.html.src, ['browsersync-reload']);
 });
 
-//Optimize images
-gulp.task('optimizeImages', function() {
-	var stream = gulp.src( config.img.src )
-		.pipe(plugins.imagemin( config.imagemin ))
-		.pipe(gulp.dest( config.img.dest ));
-
-	return stream;
-});
-
-//Clean our assets
-gulp.task('clean', function() {
-	del([
-		config.js.dest,
-		config.css.dest
-	]);
-});
-
-//Monitor file changes
-gulp.task('watchFiles', function() {
-	for(var patterns in config.watchFiles ) {
-		var tasks = config.watchFiles[patterns],
-			patternsList = patterns.split(',');
-
-		notify('Files matching "' + patterns + '" should launch the following task(s): ' + tasks.join(',') );
-
-		gulp.watch(patternsList, tasks);
-	}
-});
-
-
-//Create tasks defined in the configuration
-for(var task in config.tasks) {
-	var subtasks = config.tasks[task];
-	gulp.task(task, subtasks);
-}
+// Tasks
+gulp.task('default', ['img', 'scss', 'jslint', 'scripts', 'browsersync-reload']);
+gulp.task('img', ['optimize-img', 'svgsprite']);
