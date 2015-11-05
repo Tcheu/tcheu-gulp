@@ -3,9 +3,9 @@
 ## About the script
 
 This gulp file contains the tasks that we often use for our projects.
-The idea here is to take away the particular settings of any project in a configuration file,
+The idea here is to take away the particular settings of any project in a configuration hash,
 so that we are able to re-use the same tasks and update the gulp file from project to project,
-without having to change the file paths each time.
+without having to go through all the tasks to adapt each path.
 
 ## Installation
 
@@ -13,47 +13,10 @@ Simply run `npm install` from the command line, all the needed dependencies will
 
 ## Configuration
 
-Every information related to your project should be stored in the `gulp-config.js` file.
-Once you have completed that file with all the relevant information, you will be ready to build.
+Every information related to your project should be stored in the `config` variable, on top of the file.
+Once you have completed this variable with all the relevant information, you will be ready to build.
 
 Let's review all the configuration sections and their options.
-
-### global
-
-We store here general-purpose settings for the gulp file. It can be useful to tweak the behaviour
-of the script, but you will generally want to leave this section unchanged.
-
-+ `notifications` - Used to tweak the notifications sent to the console and browser-sync
-	+ `logo` - Image URL to your logo. If this option is defined, it will display the logo in the browser-sync notifications. Strictly useless, but fun nevertheless.
-	+ `timeout` - How many time should browser-sync display the notifications?
-	+ `errorTimeout` - Same as timeout, but for errors. You might want to put a little more time here in order to have time to decipher the gibberish returned by gulp-sass :)
-
-### tasks
-
-This section allows you to create groups of tasks. It is hashmap where the key represents the name of the task, and the value is an array containing the tasks that should be launched. The available tasks in the build file are the following:
-
-+ `startBrowserSync` - Start a new browser-sync server
-+ `reloadBrowserSync` - Ask browser-sync to reload all browsers
-+ `startStaticServer` - Start a new static server - useful in the early days of the project where you want to only design templates or when you are working with a static website generator like Jekyll
-+ `compileStyles` - Use SASS to compile your SCSS files
-+ `compressStyles` - Create a minified version of a compiled CSS file
-+ `checkScripts` - Check the syntax of your JavaScript files
-+ `compileScripts` - Bundle all your JavaScript files into one file
-+ `compressScripts` - Create a minified version a compiled JS file
-+ `optimizeImages` - Optimize all jpg, gif and png in a defined folder
-+ `clean` - Empty the content of all js and css dist folders
-+ `watchFiles` - Monitor your files for any changes. The files you monitor and their associated tasks can be configured from the watchFiles section of the configuration file
-
-### watchFiles
-
-Define here what files pattern should be monitored (using glob syntax) and what tasks should be run when one of these files is modified. watchFiles is an hashmap where the keys represents the files pattern(s) to watch. Multiple patterns can be used if they are separated by a comma. The value should be an array of task names to be executed when the files changes.
-
-For example, using the following key/value:
-
-	"*.html,./assets/js/dist/*.js": ["reloadBrowserSync"]
-
-1. All HTML files in the current folder and all the JS files in the assets/js/dist folder will be monitored
-2. The reloadBrowserSync task will be executed when there is a change
 
 ### js
 
@@ -61,7 +24,7 @@ For example, using the following key/value:
 + `bundleFileName` - Name of the concatenated (non-minified) JS file
 + `dest` - Destination folder for the concatenated and minified files
 
-### css
+### scss
 
 + `src` - Pattern matching all the SCSS files that need to be compiled (using gulp-sass)
 + `bundleFileName` - Name of the concatenated (non-minified) CSS file
@@ -72,15 +35,32 @@ For example, using the following key/value:
 + `src` - Pattern matching all images files that need to be optimized
 + `dest` - Folder where to store the optimized images
 
-### staticServer
+### svg
 
-+ `baseDir` - Specify here the directory of the static web server's root
-+ `port` - The number of the port that should be used for the server (e.g. 8080)
++ `src` - A folder containing all SVG images that should united in a single sprite
++ `dist` - Where the sprite file should be stored
++ `spriteFile` - The name of the sprite file
 
 ### Other configuration sections
 
 The other sections are used to configure individual plugins. For information regarding these options, it is best
 to directly read the documentation of each plugin.
+
+## Tasks
+
+There are three main tasks:
+
+### default
+ 
+`gulp` will execute every task and then exit.
+
+### watch
+
+`gulp watch` will monitor all your HTML, SCSS and JS files in order to compile them and refresh your page using BrowserSync.
+
+### img
+
+`gulp img` will only optimise the images and create the SVG sprite file.
 
 ## Special thanks
 
