@@ -19,9 +19,14 @@ var config = {
         },
         'notify': true
     },
+    // Where to store the build files
+    'build': {
+        'dir': 'public/dist',
+        'public': 'public'
+    },
     // SCSS files
     'scss': {
-        'src': 'public/assets/css/',
+        'src': 'public/assets/scss/',
         'dist': 'public/dist/css',
         'bundleName': 'main.css'
     },
@@ -39,7 +44,7 @@ var config = {
     // JavaScript files
     'js': {
         'src': 'public/assets/js/',
-        'dist': 'public//dist/js/',
+        'dist': 'public/dist/js/',
         'bundleName': 'main.js'
     },
     // Source SVG files to create a spritemap
@@ -56,25 +61,27 @@ var config = {
  */
 
 var gulp				= require('gulp'),
-    sass				= require('gulp-sass'),
     autoprefixer		= require('gulp-autoprefixer'),
-    jshint				= require('gulp-jshint'),
-    stripdebug			= require('gulp-strip-debug'),
-    uglify				= require('gulp-uglify'),
-    rename				= require('gulp-rename'),
-    replace				= require('gulp-replace'),
+    browsersync			= require('browser-sync'),
     concat				= require('gulp-concat'),
-    notify				= require('gulp-notify'),
-    minifycss			= require('gulp-minify-css'),
-    path				= require('path'),
-    plumber				= require('gulp-plumber'),
+    cp					= require('child_process'),
+    del					= require('del'),
+    exec				= require('child_process').exec,
     gutil				= require('gulp-util'),
     imagemin			= require('gulp-imagemin'),
-    svgstore			= require('gulp-svgstore'),
-    cp					= require('child_process'),
-    browsersync			= require('browser-sync'),
+    jshint				= require('gulp-jshint'),
+    minifycss			= require('gulp-minify-css'),
+    notify				= require('gulp-notify'),
+    path				= require('path'),
+    plumber				= require('gulp-plumber'),
+    rename				= require('gulp-rename'),
+    replace				= require('gulp-replace'),
+    rev 				= require('gulp-rev'),
+    sass				= require('gulp-sass'),
     size 				= require('gulp-size'),
-    exec				= require('child_process').exec;
+    stripdebug			= require('gulp-strip-debug'),
+    svgstore			= require('gulp-svgstore'),
+    uglify				= require('gulp-uglify');
 
 
 /**
@@ -162,6 +169,23 @@ gulp.task('svgsprite', ['optimize-img'], function() {
         .pipe(notify({ message: 'SVG sprite done' }));
 });
 
+// Cache busting
+gulp.task('cachebust', ['scss', 'scripts'], function() {
+    return gulp.src( config.build.dir + '/**/*.{css,js}' )
+        .pipe(rev())
+        .pipe(gulp.dest( config.build.dir ))
+        .pipe(rev.manifest({
+            base: config.build.public,
+            merge: true
+        }))
+        .pipe(gulp.dest( config.build.dir ));
+});
+
+//Clean assets
+gulp.task('clean', function() {
+    del.sync(config.build.dir + '**/*');
+});
+
 // Watch task
 gulp.task('watch', ['browser-sync'], function () {
     gulp.watch(config.scss.src + '**/*' , ['scss']);
@@ -170,5 +194,5 @@ gulp.task('watch', ['browser-sync'], function () {
 });
 
 // Tasks
-gulp.task('default', ['img', 'scss', 'jslint', 'scripts', 'browsersync-reload']);
+gulp.task('default', ['clean', 'img', 'scss', 'jslint', 'scripts', 'browsersync-reload', 'cachebust']);
 gulp.task('img', ['optimize-img', 'svgsprite']);
