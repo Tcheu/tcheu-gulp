@@ -1,6 +1,6 @@
 {
-  "name": "project_name",
-  "version": "0.0.2",
+  "name": "tcheu-gulp",
+  "version": "0.0.3",
   "private": true,
   "description": "",
   "main": "gulpfile.js",
@@ -10,22 +10,25 @@
     "del": "^2.0.2",
     "gulp": "^3.9.0",
     "gulp-autoprefixer": "^3.1.0",
+    "gulp-clean-css": "^2.0.7",
     "gulp-concat": "^2.6.0",
-    "gulp-eslint": "^1.1.0",
-    "gulp-imagemin": "^2.4.0",
-    "gulp-jshint": "^1.12.0",
-    "gulp-minify-css": "^1.2.1",
+    "gulp-eslint": "^2.0.0",
+    "gulp-imagemin": "^3.0.1",
+    "gulp-jshint": "^2.0.0",
+    "gulp-jspm": "^0.5.8",
     "gulp-notify": "^2.2.0",
     "gulp-plumber": "^1.0.1",
     "gulp-rename": "^1.2.2",
     "gulp-replace": "^0.5.4",
-    "gulp-rev": "^6.0.1",
+    "gulp-rev": "^7.0.0",
     "gulp-sass": "^2.1.0",
     "gulp-size": "^2.0.0",
-    "gulp-strip-debug": "^1.0.0",
-    "gulp-svgstore": "^5.0.5",
+    "gulp-strip-debug": "^1.0.2",
+    "gulp-svgstore": "^6.0.0",
     "gulp-uglify": "^1.4.2",
-    "gulp-util": "^3.0.0"
+    "gulp-util": "^3.0.7",
+    "jshint": "^2.8.0",
+    "jspm": "^0.16.32"
   },
   "contributors": [
     {
@@ -39,5 +42,28 @@
       "url": "http://github.com/pvledoux"
     }
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "jspm": {
+    "directories": {
+      "baseURL": "public",
+      "packages": "public/assets/js/vendors"
+    },
+    "configFile": "public/assets/js/config.js",
+    "dependencies": {
+      "Alex-D/Trumbowyg": "github:Alex-D/Trumbowyg@^2.1.0",
+      "eligrey/classList.js": "github:eligrey/classList.js@^1.1.20150312",
+      "jquery": "npm:jquery@^2.2.3",
+      "jquery-validation": "github:jzaefferer/jquery-validation@^1.15.0",
+      "lodash": "npm:lodash@^4.6.1",
+      "mckamey/countdownjs": "github:mckamey/countdownjs@^2.6.0",
+      "moment/moment": "github:moment/moment@^2.13.0",
+      "patrickkunka/mixitup": "github:patrickkunka/mixitup@^2.1.11",
+      "scottjehl/picturefill": "github:scottjehl/picturefill@^3.0.2"
+    },
+    "devDependencies": {
+      "babel": "npm:babel-core@^5.8.24",
+      "babel-runtime": "npm:babel-runtime@^5.8.24",
+      "core-js": "npm:core-js@^1.1.4"
+    }
+  }
 }
