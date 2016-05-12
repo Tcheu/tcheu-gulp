@@ -14,8 +14,8 @@ var config = {
     'browsersync': {
         'open': false,
         'port': '3000',
-        'ghostMode': false,
         'proxy': 'tcheu-gulp.dev',
+        'ghostMode': false,
         'online': true,
         'notify': true
     },
@@ -33,8 +33,7 @@ var config = {
     // These are the HTML or PHP files to watch
     'html': {
         'src': [
-            'craft/templates/**/*.twig',
-            'craft/config/**/*.php'
+            'public/index.html'
         ]
     },
     // Images folders for image optimisation
@@ -89,7 +88,7 @@ var config = {
 
 var gulp				= require('gulp'),
     autoprefixer		= require('gulp-autoprefixer'),
-    browsersync			= require('browser-sync'),
+    browsersync			= require('browser-sync').create(),
     concat				= require('gulp-concat'),
     cp					= require('child_process'),
     del					= require('del'),
@@ -130,7 +129,7 @@ var onError = function (err) {
 
 // BrowserSync proxy
 gulp.task('browser-sync', function() {
-    browsersync(config.browsersync);
+    browsersync.init(config.browsersync);
 });
 
 // BrowserSync reload all Browsers
@@ -145,7 +144,7 @@ gulp.task('scss', function() {
         .pipe(sass({ style: 'expanded' }))
         .pipe(gulp.dest( config.scss.dist ))
         .pipe(autoprefixer( config.autoprefixer ))
-        .pipe(browsersync.reload({stream: true}))
+        .pipe(browsersync.stream())
         .pipe(rename({ suffix: '.min' }))
         .pipe(cleanCSS({compatibility: 'ie9'}))
         .pipe(gulp.dest( config.scss.dist ))
