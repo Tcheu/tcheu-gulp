@@ -3,3 +3,4 @@ public/index.html
 public/assets
 public/dist
 public/rev-manifest.json
+yarn.lock
